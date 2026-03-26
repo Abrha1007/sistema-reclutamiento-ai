@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard RH</title>
+
+<style>
+body {
+  background: #0f172a;
+  color: white;
+  font-family: system-ui;
+  padding: 20px;
+}
+
+h1 {
+  margin-bottom: 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
+  gap: 15px;
+}
+
+.card {
+  background: #1f2937;
+  padding: 15px;
+  border-radius: 12px;
+  border: 1px solid #374151;
+}
+
+.nombre {
+  font-weight: bold;
+}
+
+.score-bar {
+  height: 8px;
+  background: #374151;
+  border-radius: 6px;
+  margin: 8px 0;
+}
+
+.score-fill {
+  height: 100%;
+  border-radius: 6px;
+}
+
+.top {
+  border: 2px solid #22c55e;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📊 Dashboard de Reclutamiento</h1>
+
+<button onclick="cargar()">Actualizar</button>
+
+<div class="grid" id="grid"></div>
+
+<script>
+const API = "http://localhost:3000/candidatos";
+
+async function cargar() {
+  const res = await fetch(API);
+  const data = await res.json();
+
+  // 🔥 ordenar por score
+  const candidatos = data.map(c => {
+    let score = 0;
+    const match = c.analisis.match(/Puntuación.*?(\d+)/i);
+    if (match) score = parseInt(match[1]);
+    return { ...c, score };
+  });
+
+  candidatos.sort((a,b) => b.score - a.score);
+
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  candidatos.forEach((c, index) => {
+
+    let color = "#ef4444";
+    if (c.score >= 8) color = "#22c55e";
+    else if (c.score >= 5) color = "#f59e0b";
+
+    const div = document.createElement("div");
+    div.className = "card";
+
+    // 🔥 top candidato
+    if (index === 0) div.classList.add("top");
+
+    div.innerHTML = `
+      <div class="nombre">${c.archivo}</div>
+
+      <div class="score-bar">
+        <div class="score-fill" style="width:${c.score*10}%; background:${color};"></div>
+      </div>
+
+      <div>Puntuación: ${c.score}/10</div>
+
+      <details>
+        <summary>Ver análisis</summary>
+        <pre style="white-space: pre-wrap; font-size:11px;">${c.analisis}</pre>
+      </details>
+    `;
+
+    grid.appendChild(div);
+  });
+}
+
+// cargar automáticamente
+cargar();
+</script>
+
+</body>
+</html>
