@@ -40,7 +40,6 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 const model = genAI.getGenerativeModel({
   model: "gemini-1.5-flash-latest",
-
   systemInstruction: `
   Eres el asistente de soporte de la plataforma de Alejandro.
   También puedes analizar CVs y evaluar candidatos.
