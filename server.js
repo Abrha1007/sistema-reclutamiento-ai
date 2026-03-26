@@ -3,7 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import multer from "multer";
 import fs from "fs";
 
@@ -35,25 +35,11 @@ const upload = multer({ dest: "uploads/" });
 // 🔥 "BASE DE DATOS" temporal
 let candidatos = [];
 
-// 🔥 GEMINI CONFIG
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-
-const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash-latest",
-  systemInstruction: `
-  Eres el asistente de soporte de la plataforma de Alejandro.
-  También puedes analizar CVs y evaluar candidatos.
-
-  Si analizas un CV debes dar:
-  - Nombre del candidato
-  - Puntuación (1-10)
-  - Habilidades clave
-  - Experiencia
-  - Veredicto
-
-  Responde en español, claro y profesional.
-  `,
+// 🔥 GEMINI CONFIG (CORRECTO)
+const ai = new GoogleGenAI({
+  apiKey: process.env.GOOGLE_API_KEY
 });
+
 
 
 // =========================
@@ -63,39 +49,38 @@ app.post("/chat", async (req, res) => {
   const { messages } = req.body;
 
   try {
-    const history = messages
-  .filter(m => m.role === "user" || m.role === "assistant")
-  .map(m => ({
-    role: m.role === "user" ? "user" : "model",
-    parts: [{ text: m.content }]
-  }));
+    const prompt = `
+    Eres el asistente de soporte de la plataforma de Alejandro.
+    Solo respondes cosas relacionadas con:
+    - escaneo de documentos
+    - registro de clientes
+    - cámaras IP
+    - portal wifi
+    - tickets
 
-// 🔥 FORZAR que el primero sea user
-if (history.length === 0 || history[0].role !== "user") {
-  history.unshift({
-    role: "user",
-    parts: [{ text: "Hola" }]
-  });
-}
+    Responde claro y profesional.
 
-const chat = model.startChat({ history });
+    Usuario: ${messages[messages.length - 1].content}
+    `;
 
-const result = await chat.sendMessage(messages[messages.length - 1].content);
-const text = result.response.text();
-
+    const result = await ai.models.generateContent({
+      model: "gemini-2.0-flash",
+      contents: prompt
+    });
 
     res.json({
       reply: {
         role: "assistant",
-        content: text,
-      },
+        content: result.text
+      }
     });
 
   } catch (err) {
     console.error("❌ Error Gemini:", err);
-    res.status(500).json({ error: "Error al generar respuesta" });
+    res.status(500).json({ error: "Error en IA" });
   }
 });
+
 
 
 // =========================
@@ -109,20 +94,28 @@ app.post("/analizar-cv", upload.single("cv"), async (req, res) => {
     const textoCV = pdfData.text;
 
     const prompt = `
-    Analiza este CV y genera:
+Eres un reclutador experto.
 
-    Nombre del candidato:
-    Puntuación (1-10):
-    Habilidades clave:
-    Experiencia:
-    Veredicto:
+Analiza este CV y genera:
 
-    CV:
-    ${textoCV}
-    `;
+- Nombre del candidato
+- Puntuación (1-10)
+- Habilidades clave
+- Experiencia
+- Veredicto
 
-    const result = await model.generateContent(prompt);
-    const texto = result.response.text();
+CV:
+${textoCV}
+`;
+
+const result = await ai.models.generateContent({
+  model: "gemini-2.0-flash",
+  contents: prompt
+});
+
+const texto = result.text;
+
+
 
 
     // 🔥 guardar candidato
