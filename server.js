@@ -6,9 +6,12 @@ import { fileURLToPath } from "url";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import multer from "multer";
 import fs from "fs";
-import pkg from "pdf-parse";
-const pdfParse = pkg;
 
+
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+
+const pdfParse = require("pdf-parse");
 
 
 dotenv.config();
