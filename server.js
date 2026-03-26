@@ -11,7 +11,9 @@ import fs from "fs";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-const pdfParse = require("pdf-parse");
+const pdfParseLib = require("pdf-parse");
+const pdfParse = pdfParseLib.default || pdfParseLib;
+
 
 
 dotenv.config();
@@ -61,15 +63,26 @@ app.post("/chat", async (req, res) => {
   const { messages } = req.body;
 
   try {
-    const chat = model.startChat({
-      history: messages.map(m => ({
-        role: m.role === "user" ? "user" : "model",
-        parts: [{ text: m.content }]
-      }))
-    });
+    const history = messages
+  .filter(m => m.role === "user" || m.role === "assistant")
+  .map(m => ({
+    role: m.role === "user" ? "user" : "model",
+    parts: [{ text: m.content }]
+  }));
 
-    const result = await chat.sendMessage("Responde al último mensaje");
-    const text = result.response.text();
+// 🔥 FORZAR que el primero sea user
+if (history.length === 0 || history[0].role !== "user") {
+  history.unshift({
+    role: "user",
+    parts: [{ text: "Hola" }]
+  });
+}
+
+const chat = model.startChat({ history });
+
+const result = await chat.sendMessage(messages[messages.length - 1].content);
+const text = result.response.text();
+
 
     res.json({
       reply: {
