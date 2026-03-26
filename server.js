@@ -10,8 +10,8 @@ import fs from "fs";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-const pdfParseModule = require("pdf-parse");
-const pdfParse = pdfParseModule.default || pdfParseModule;
+const pdfParse = require("pdf-parse-debugging-disabled");
+
 
 
 
@@ -39,7 +39,8 @@ let candidatos = [];
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-1.5-flash-latest",
+
   systemInstruction: `
   Eres el asistente de soporte de la plataforma de Alejandro.
   También puedes analizar CVs y evaluar candidatos.
