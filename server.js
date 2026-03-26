@@ -7,12 +7,12 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import multer from "multer";
 import fs from "fs";
 
-
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-const pdfParseLib = require("pdf-parse");
-const pdfParse = pdfParseLib.default || pdfParseLib;
+const pdfParseModule = require("pdf-parse");
+const pdfParse = pdfParseModule.default || pdfParseModule;
+
 
 
 
@@ -39,7 +39,7 @@ let candidatos = [];
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-pro",
+  model: "gemini-1.5-flash",
   systemInstruction: `
   Eres el asistente de soporte de la plataforma de Alejandro.
   También puedes analizar CVs y evaluar candidatos.
@@ -122,8 +122,8 @@ app.post("/analizar-cv", upload.single("cv"), async (req, res) => {
     `;
 
     const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const texto = response.text();
+    const texto = result.response.text();
+
 
     // 🔥 guardar candidato
     const candidato = {
@@ -168,5 +168,5 @@ app.get("/", (req, res) => {
 // =========================
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Servidor Gemini PRO en http://localhost:${PORT}`);
+  console.log(`✅ Servidor Gemini en http://localhost:${PORT}`);
 });
